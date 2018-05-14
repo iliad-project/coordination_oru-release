@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>coordination_oru_ros</name>
-  <version>0.2.1</version>
+  <version>0.2.2</version>
   <description>The coordination_oru_ros package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
@@ -41,7 +41,6 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>rosjava_build_tools</build_depend>
-  <build_depend>rosjava</build_depend>
   <build_depend>rosjava_messages</build_depend>
   <build_depend>orunav_msgs</build_depend>
   <build_depend>message_generation</build_depend>
