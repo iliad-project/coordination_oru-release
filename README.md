@@ -1,3 +1,26 @@
+## coordination_oru_ros (kinetic) - 0.2.2-0
+
+The packages in the `coordination_oru_ros` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release -y -t kinetic -r kinetic coordination_oru_ros` on `Mon, 14 May 2018 13:55:33 -0000`
+
+The `coordination_oru_ros` package was released.
+
+Version of package(s) in repository `coordination_oru_ros`:
+
+- upstream repository: https://github.com/FedericoPecora/coordination_oru_ros.git
+- release repository: https://github.com/iliad-project/coordination_oru-release.git
+- rosdistro version: `0.2.1-0`
+- old version: `0.2.1-0`
+- new version: `0.2.2-0`
+
+Versions of tools used:
+
+- bloom version: `0.6.2`
+- catkin_pkg version: `0.4.1`
+- rosdep version: `0.12.1`
+- rosdistro version: `0.6.8`
+- vcstools version: `0.1.40`
+
+
 ## coordination_oru_ros (kinetic) - 0.2.1-0
 
 The packages in the `coordination_oru_ros` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release -t kinetic -r kinetic coordination_oru_ros` on `Mon, 14 May 2018 12:48:52 -0000`
