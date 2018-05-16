@@ -1,0 +1,12 @@
+Source: ros-kinetic-coordination-oru-msgs
+Section: misc
+Priority: extra
+Maintainer: Marc Hanheide <marc@hanheide.net>
+Build-Depends: debhelper (>= 9.0.0), python-rosdistro, ros-kinetic-catkin, ros-kinetic-genjava, ros-kinetic-orunav-msgs, ros-kinetic-rosjava-build-tools, ros-kinetic-roslib
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-kinetic-coordination-oru-msgs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-rosdistro, ros-kinetic-genjava, ros-kinetic-orunav-msgs, ros-kinetic-rosjava-build-tools, ros-kinetic-roslib
+Description: The coordination_oru_msgs package

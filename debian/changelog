@@ -1,0 +1,52 @@
+ros-kinetic-coordination-oru-msgs (0.4.0-0xenial) xenial; urgency=high
+
+  * Merge pull request #5 <https://github.com/FedericoPecora/coordination_oru_ros/issues/5> from FedericoPecora/message_generation
+    Refactoring into separate packages for message dependencies
+  * Contributors: Federico Pecora
+
+ -- Marc Hanheide <marc@hanheide.net>  Mon, 14 May 2018 22:00:00 -0000
+
+ros-kinetic-coordination-oru-msgs (0.3.1-0xenial) xenial; urgency=high
+
+
+
+ -- Marc Hanheide <marc@hanheide.net>  Sun, 13 May 2018 22:00:00 -0000
+
+ros-kinetic-coordination-oru-msgs (0.3.0-0xenial) xenial; urgency=high
+
+  * removed invalid dep
+  * make messages an own package
+  * added msgs package
+  * Contributors: Marc Hanheide
+  * removed invalid dep
+  * make messages an own package
+  * added msgs package
+  * Contributors: Marc Hanheide
+
+ -- Marc Hanheide <marc@hanheide.net>  Sun, 13 May 2018 22:00:00 -0000
+
+ros-kinetic-coordination-oru-msgs (0.2.2-0xenial) xenial; urgency=high
+
+
+
+ -- Marc Hanheide <marc@hanheide.net>  Mon, 14 May 2018 12:54:00 -0000
+
+ros-kinetic-coordination-oru-msgs (0.2.1-0xenial) xenial; urgency=high
+
+
+
+ -- Marc Hanheide <marc@hanheide.net>  Mon, 14 May 2018 11:47:00 -0000
+
+ros-kinetic-coordination-oru-msgs (0.2.0-0xenial) xenial; urgency=high
+
+
+
+ -- Marc Hanheide <marc@hanheide.net>  Mon, 14 May 2018 08:27:00 -0000
+
+ros-kinetic-coordination-oru-msgs (0.1.0-0xenial) xenial; urgency=high
+
+
+
+ -- Marc Hanheide <marc@hanheide.net>  Tue, 21 Nov 2017 23:00:00 -0000
+
+
