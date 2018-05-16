@@ -2,6 +2,14 @@
 Changelog for package coordination_oru_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.4.0 (2018-05-15)
+------------------
+* Corrected iliad_smp_global_planner reference in launch files
+* Merge pull request `#5 <https://github.com/FedericoPecora/coordination_oru_ros/issues/5>`_ from FedericoPecora/message_generation
+  Refactoring into separate packages for message dependencies
+* added launch install
+* Contributors: Federico Pecora, Marc Hanheide
+
 0.3.1 (2018-05-14)
 ------------------
 * added missing dep
