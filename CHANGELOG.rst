@@ -2,6 +2,9 @@
 Changelog for package coordination_oru_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2018-09-03)
+------------------
+
 0.4.0 (2018-05-15)
 ------------------
 * Merge pull request `#5 <https://github.com/FedericoPecora/coordination_oru_ros/issues/5>`_ from FedericoPecora/message_generation
