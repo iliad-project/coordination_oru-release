@@ -49,28 +49,37 @@ public class IliadMissions extends Missions {
 				if (oneMissionNode.getNodeType() == Node.ELEMENT_NODE) {
 					Element eElement = (Element)oneMissionNode;
 					int robotID = Integer.parseInt(eElement.getElementsByTagName("robotID").item(0).getTextContent());
+					boolean repeatMission = true;
+					if (eElement.getElementsByTagName("repeat").getLength() > 0) repeatMission = Boolean.parseBoolean(eElement.getElementsByTagName("repeat").item(0).getTextContent());
 					String fromLocation = eElement.getElementsByTagName("fromLocation").item(0).getTextContent();
 					String toLocation = eElement.getElementsByTagName("toLocation").item(0).getTextContent();
 					Pose fromPose = null;
 					Pose goalPose = null;
 					OPERATION_TYPE missionType = OPERATION_TYPE.valueOf(eElement.getAttributes().getNamedItem("type").getTextContent());
 					NodeList poseList = eElement.getElementsByTagName("Pose");
-					for (int j = 0; j < poseList.getLength(); j++) {
-						Node onePose = poseList.item(j);
-						Element onePoseElement = (Element)onePose;
-						if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("fromPose")) {
-							double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
-							double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
-							double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
-							fromPose = new Pose(x,y,theta);
+					if (poseList.getLength() != 0) {
+						for (int j = 0; j < poseList.getLength(); j++) {
+							Node onePose = poseList.item(j);
+							Element onePoseElement = (Element)onePose;
+							if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("fromPose")) {
+								double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
+								double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
+								double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
+								fromPose = new Pose(x,y,theta);
+							}
+							else if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("toPose")) {
+								double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
+								double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
+								double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
+								goalPose = new Pose(x,y,theta);
+							}
 						}
-						else if (onePoseElement.getAttributes().getNamedItem("name").getTextContent().equals("toPose")) {
-							double x = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("x").item(0)).getTextContent());
-							double y = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("y").item(0)).getTextContent());
-							double theta = Double.parseDouble(((Element)onePoseElement.getElementsByTagName("theta").item(0)).getTextContent());
-							goalPose = new Pose(x,y,theta);
-						}
-
+					}
+					else {
+						if (Missions.locations.containsKey(fromLocation)) fromPose = Missions.getLocation(fromLocation);
+						else fromPose = null;
+						if (Missions.locations.containsKey(toLocation)) goalPose = Missions.getLocation(toLocation);
+						else goalPose = null;
 					}
 					
 					ArrayList<IliadItem> items = new ArrayList<IliadItem>();
@@ -89,10 +98,10 @@ public class IliadMissions extends Missions {
 							
 					if (missionType.equals(OPERATION_TYPE.PICK_ITEMS)) {
 						IliadItem[] itemsArray = items.toArray(new IliadItem[items.size()]);
-						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, itemsArray));
+						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, repeatMission, itemsArray));
 					}
 					else {
-						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, missionType));
+						missions.add(new IliadMission(robotID, fromLocation, toLocation, fromPose, goalPose, missionType, repeatMission));
 					}
 				}				
 			}
