@@ -1,17 +1,23 @@
 package se.oru.coordination.coordinator.ros_coordinator;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.metacsp.multi.spatioTemporal.paths.Pose;
+import org.metacsp.multi.spatioTemporal.paths.PoseSteering;
 import org.metacsp.multi.spatioTemporal.paths.Quaternion;
+import org.metacsp.multi.spatioTemporal.paths.Trajectory;
 import org.metacsp.multi.spatioTemporal.paths.TrajectoryEnvelope;
 import org.ros.exception.RemoteException;
 import org.ros.exception.RosRuntimeException;
+import org.ros.exception.ServiceException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
@@ -27,6 +33,8 @@ import se.oru.coordination.coordination_oru.AbstractTrajectoryEnvelopeTracker;
 import se.oru.coordination.coordination_oru.RobotReport;
 import se.oru.coordination.coordination_oru.TrackingCallback;
 import se.oru.coordination.coordination_oru.TrajectoryEnvelopeCoordinator;
+import std_msgs.Empty;
+import std_msgs.Int32;
 
 public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTracker {
 
@@ -38,26 +46,47 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	protected VEHICLE_STATE currentVehicleState = null;
 	boolean waitingForGoalOperation = false;
 	boolean calledExecuteFirstTime = false;
+	private double prevDistance = 0.0;
+	private long lastUpdateTime = -1;
 
 	public static enum VEHICLE_STATE {_IGNORE_, WAITING_FOR_TASK, PERFORMING_START_OPERATION, DRIVING, PERFORMING_GOAL_OPERATION, TASK_FAILED, WAITING_FOR_TASK_INTERNAL, DRIVING_SLOWDOWN, AT_CRITICAL_POINT}
-	
-	public TrajectoryEnvelopeTrackerROS(final TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
+		
+	public TrajectoryEnvelopeTrackerROS(TrajectoryEnvelope te, double temporalResolution, TrajectoryEnvelopeCoordinator tec, TrackingCallback cb, ConnectedNode connectedNode, Task currentTask) {
 		super(te, temporalResolution, tec, 30, cb);
 		this.node = connectedNode;
 		this.currentTask = currentTask;
+		
+		final TrajectoryEnvelopeTrackerROS thisTracker = this;
+		
 		if (currentTask == null) throw new Error("Trying to instantiate a TrajectoryEnvelopeTrackerROS for Robot" + te.getRobotID() + " with currentTask == " + currentTask);
 		subscriber = connectedNode.newSubscriber("robot"+te.getRobotID()+"/report", orunav_msgs.RobotReport._TYPE);
 	    subscriber.addMessageListener(new MessageListener<orunav_msgs.RobotReport>() {
 	      @Override
 	      public void onNewMessage(orunav_msgs.RobotReport message) {
+	    	  TrajectoryEnvelope thisTE = thisTracker.getTrajectoryEnvelope();
+	    	  if (lastUpdateTime == -1) lastUpdateTime = getCurrentTimeInMillis();
 	    	  Quaternion quat = new Quaternion(message.getState().getPose().getOrientation().getX(), message.getState().getPose().getOrientation().getY(), message.getState().getPose().getOrientation().getZ(), message.getState().getPose().getOrientation().getW());
 	    	  Pose pose = new Pose(message.getState().getPose().getPosition().getX(), message.getState().getPose().getPosition().getY(), quat.getTheta());
-	    	  int index = message.getSequenceNum();
+	    	  int index = Math.min(message.getSequenceNum(), traj.getPose().length-1);
+	    	  //Need to estimate velocity and distance traveled for use in the FW model...
 	    	  if (waitingForGoalOperation) {
-	    		  metaCSPLogger.info("Current state of robot" + te.getRobotID() + ": " + currentVehicleState);
-	    		  currentRR = new RobotReport(te.getRobotID(), pose, te.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
+	    		  metaCSPLogger.info("Current state of robot" + thisTE.getRobotID() + ": " + currentVehicleState);
+	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, thisTE.getTrajectory().getPose().length-1, -1.0, -1.0, -1);
 	    	  }
-	    	  else currentRR = new RobotReport(te.getRobotID(), pose, index, -1.0, -1.0, -1);
+	    	  else {
+	    		  Trajectory traj = thisTE.getTrajectory();
+	    		  double newDistance = 0.0;
+	    		  for (int i = 0; i < index-1; i++) {
+	    			  newDistance += traj.getPose()[i].distanceTo(traj.getPose()[i+1]);
+	    		  }
+	    		  long currentTime = getCurrentTimeInMillis(); 
+	    		  long deltaT = currentTime-lastUpdateTime;
+	    		  double vel = (newDistance-prevDistance)/(deltaT/1000.0);
+	    		  currentRR = new RobotReport(thisTE.getRobotID(), pose, index, vel, newDistance, -1);
+	    		  
+	    		  lastUpdateTime = currentTime;
+	    		  prevDistance = newDistance;
+	    	  }
 	    	  currentVehicleState = VEHICLE_STATE.values()[message.getStatus()];
 	    	  onPositionUpdate();
 	    	  
@@ -94,7 +123,7 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		callExecuteTaskService(arg0, calledExecuteFirstTime);
 		calledExecuteFirstTime = true;
 	}
-
+	
 	@Override
 	public void startTracking() { }
 	
@@ -112,7 +141,11 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 	private void callExecuteTaskService(int cp, boolean update) {
 
 		ServiceClient<ExecuteTaskRequest, ExecuteTaskResponse> serviceClient;
-		try { serviceClient = node.newServiceClient("/robot" + currentTask.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE); }
+		try {
+			System.out.println("-------> Going to call service: /robot" + currentTask.getTarget().getRobotId() + "/execute_task");
+			System.out.println("----------> and my TE is " + te);
+			serviceClient = node.newServiceClient("/robot" + currentTask.getTarget().getRobotId() + "/execute_task", ExecuteTask._TYPE);
+		}
 		catch (ServiceNotFoundException e) { throw new RosRuntimeException(e); }
 		final ExecuteTaskRequest request = serviceClient.newMessage();
 		CoordinatorTimeVec cts = computeCTsFromDTs(currentTask.getDts());
@@ -169,6 +202,34 @@ public class TrajectoryEnvelopeTrackerROS extends AbstractTrajectoryEnvelopeTrac
 		ctList.add(ctSlow);
 		cts.setTs(ctList);
 		return cts;
+	}
+
+	@Override
+	public void onTrajectoryEnvelopeUpdate(TrajectoryEnvelope te) {
+		PoseSteering[] newPS = te.getTrajectory().getPoseSteering();
+		ArrayList<orunav_msgs.PoseSteering> newPath = new ArrayList<orunav_msgs.PoseSteering>();
+		for (PoseSteering ps : newPS) {
+			orunav_msgs.PoseSteering onePS = node.getTopicMessageFactory().newFromType(orunav_msgs.PoseSteering._TYPE);
+			geometry_msgs.Pose oneP = node.getTopicMessageFactory().newFromType(geometry_msgs.Pose._TYPE);
+			geometry_msgs.Point onePnt = node.getTopicMessageFactory().newFromType(geometry_msgs.Point._TYPE);
+			onePnt.setX(ps.getX());
+			onePnt.setY(ps.getY());
+			onePnt.setZ(0.0);
+			oneP.setPosition(onePnt);
+			Quaternion quat = new Quaternion(ps.getTheta());
+			geometry_msgs.Quaternion oneQ = node.getTopicMessageFactory().newFromType(geometry_msgs.Quaternion._TYPE);
+			oneQ.setX(quat.getX());
+			oneQ.setY(quat.getY());
+			oneQ.setZ(quat.getZ());
+			oneQ.setW(quat.getW());
+			oneP.setOrientation(oneQ);
+			onePS.setPose(oneP);
+			onePS.setSteering(ps.getSteering());
+			newPath.add(onePS);
+		}
+		currentTask.getPath().setPath(newPath);
+		System.out.println("%%%% Going to send new PATH OF SIZE to robot " + te.getRobotID() + ": " + currentTask.getPath().getPath().size());
+		tec.setCriticalPoint(te.getRobotID(), -1);		
 	}
 
 
